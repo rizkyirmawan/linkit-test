@@ -7,18 +7,18 @@ export const orderRoutes = new Elysia()
   .guard(
     { beforeHandle: [authGuard.beforeHandle] },
     (app) => app
-      .get('/api/orders', async ({ store }) => {
+      .get('/api/orders', async ({ request }) => {
         const db = await getDb();
-        const currentUser = (store as any).user;
+        const currentUser = (request as any).user;
         return db.query.orders.findMany({
           where: eq(schema.orders.userId, currentUser.id),
           with: { coffee: true, user: true },
           orderBy: [desc(schema.orders.orderedAt)],
         });
       })
-      .get('/api/orders/:id', async ({ params, set, store }) => {
+      .get('/api/orders/:id', async ({ params, set, request }) => {
         const db = await getDb();
-        const currentUser = (store as any).user;
+        const currentUser = (request as any).user;
         const id = parseInt((params as any).id);
         if (isNaN(id)) {
           set.status = 400;
@@ -38,9 +38,9 @@ export const orderRoutes = new Elysia()
         }
         return order;
       })
-      .post('/api/orders', async ({ body, set, store }) => {
+      .post('/api/orders', async ({ body, set, request }) => {
         const db = await getDb();
-        const currentUser = (store as any).user;
+        const currentUser = (request as any).user;
         const { coffeeId, quantity, totalPrice } = body as any;
 
         if (!coffeeId || !quantity || !totalPrice) {
@@ -66,14 +66,6 @@ export const orderRoutes = new Elysia()
           return { error: true, message: 'Coffee not found' };
         }
 
-        const user = await db.query.users.findFirst({
-          where: eq(schema.users.id, currentUser.id),
-        });
-        if (!user) {
-          set.status = 404;
-          return { error: true, message: 'User not found' };
-        }
-
         const result = await db.insert(schema.orders).values({
           coffeeId,
           userId: currentUser.id,
@@ -85,9 +77,9 @@ export const orderRoutes = new Elysia()
         set.status = 201;
         return { message: 'Order created', id: result.insertId };
       })
-      .put('/api/orders/:id', async ({ params, body, set, store }) => {
+      .put('/api/orders/:id', async ({ params, body, set, request }) => {
         const db = await getDb();
-        const currentUser = (store as any).user;
+        const currentUser = (request as any).user;
         const id = parseInt((params as any).id);
         if (isNaN(id)) {
           set.status = 400;
@@ -136,9 +128,9 @@ export const orderRoutes = new Elysia()
 
         return { message: 'Order updated' };
       })
-      .delete('/api/orders/:id', async ({ params, set, store }) => {
+      .delete('/api/orders/:id', async ({ params, set, request }) => {
         const db = await getDb();
-        const currentUser = (store as any).user;
+        const currentUser = (request as any).user;
         const id = parseInt((params as any).id);
         if (isNaN(id)) {
           set.status = 400;
