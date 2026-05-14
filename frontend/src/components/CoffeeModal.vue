@@ -1,6 +1,7 @@
 <template>
-  <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="$emit('close')">
-    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4">
+  <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 relative">
+      <button @click="$emit('close')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl leading-none font-bold">&times;</button>
       <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ isEdit ? 'Edit Coffee' : 'Add Coffee' }}</h3>
 
       <form @submit.prevent="handleSubmit" class="space-y-3">
