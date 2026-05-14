@@ -12,7 +12,7 @@ export async function verifyAuth(ctx: any): Promise<{ id: number; username: stri
 }
 
 export const authGuard = {
-  beforeHandle: async ({ jwt, headers, set }: any) => {
+  beforeHandle: async ({ jwt, headers, set, store }: any) => {
     const auth = headers.authorization;
     if (!auth || !auth.startsWith('Bearer ')) {
       set.status = 401;
@@ -24,5 +24,6 @@ export const authGuard = {
       set.status = 401;
       return { error: 'Unauthorized', message: 'Invalid or expired token' };
     }
+    store.user = { id: payload.id as number, username: payload.username as string };
   },
 };

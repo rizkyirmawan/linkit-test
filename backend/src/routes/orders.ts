@@ -7,15 +7,18 @@ export const orderRoutes = new Elysia()
   .guard(
     { beforeHandle: [authGuard.beforeHandle] },
     (app) => app
-      .get('/api/orders', async () => {
+      .get('/api/orders', async ({ store }) => {
         const db = await getDb();
+        const currentUser = (store as any).user;
         return db.query.orders.findMany({
+          where: eq(schema.orders.userId, currentUser.id),
           with: { coffee: true, user: true },
           orderBy: [desc(schema.orders.orderedAt)],
         });
       })
-      .get('/api/orders/:id', async ({ params, set }) => {
+      .get('/api/orders/:id', async ({ params, set, store }) => {
         const db = await getDb();
+        const currentUser = (store as any).user;
         const id = parseInt((params as any).id);
         if (isNaN(id)) {
           set.status = 400;
@@ -29,15 +32,20 @@ export const orderRoutes = new Elysia()
           set.status = 404;
           return { error: true, message: 'Order not found' };
         }
+        if (order.userId !== currentUser.id) {
+          set.status = 403;
+          return { error: true, message: 'Forbidden' };
+        }
         return order;
       })
-      .post('/api/orders', async ({ body, set }) => {
+      .post('/api/orders', async ({ body, set, store }) => {
         const db = await getDb();
-        const { coffeeId, userId, quantity, totalPrice } = body as any;
+        const currentUser = (store as any).user;
+        const { coffeeId, quantity, totalPrice } = body as any;
 
-        if (!coffeeId || !userId || !quantity || !totalPrice) {
+        if (!coffeeId || !quantity || !totalPrice) {
           set.status = 400;
-          return { error: true, message: 'coffeeId, userId, quantity, and totalPrice are required' };
+          return { error: true, message: 'coffeeId, quantity, and totalPrice are required' };
         }
 
         if (quantity < 1) {
@@ -59,7 +67,7 @@ export const orderRoutes = new Elysia()
         }
 
         const user = await db.query.users.findFirst({
-          where: eq(schema.users.id, userId),
+          where: eq(schema.users.id, currentUser.id),
         });
         if (!user) {
           set.status = 404;
@@ -68,7 +76,7 @@ export const orderRoutes = new Elysia()
 
         const result = await db.insert(schema.orders).values({
           coffeeId,
-          userId,
+          userId: currentUser.id,
           quantity,
           totalPrice: totalPrice.toString(),
           status: 'pending',
@@ -77,8 +85,9 @@ export const orderRoutes = new Elysia()
         set.status = 201;
         return { message: 'Order created', id: result.insertId };
       })
-      .put('/api/orders/:id', async ({ params, body, set }) => {
+      .put('/api/orders/:id', async ({ params, body, set, store }) => {
         const db = await getDb();
+        const currentUser = (store as any).user;
         const id = parseInt((params as any).id);
         if (isNaN(id)) {
           set.status = 400;
@@ -91,6 +100,10 @@ export const orderRoutes = new Elysia()
         if (!existing) {
           set.status = 404;
           return { error: true, message: 'Order not found' };
+        }
+        if (existing.userId !== currentUser.id) {
+          set.status = 403;
+          return { error: true, message: 'Forbidden' };
         }
 
         const { quantity, totalPrice, status } = body as any;
@@ -123,8 +136,9 @@ export const orderRoutes = new Elysia()
 
         return { message: 'Order updated' };
       })
-      .delete('/api/orders/:id', async ({ params, set }) => {
+      .delete('/api/orders/:id', async ({ params, set, store }) => {
         const db = await getDb();
+        const currentUser = (store as any).user;
         const id = parseInt((params as any).id);
         if (isNaN(id)) {
           set.status = 400;
@@ -137,6 +151,10 @@ export const orderRoutes = new Elysia()
         if (!existing) {
           set.status = 404;
           return { error: true, message: 'Order not found' };
+        }
+        if (existing.userId !== currentUser.id) {
+          set.status = 403;
+          return { error: true, message: 'Forbidden' };
         }
 
         await db.delete(schema.orders)

@@ -44,8 +44,6 @@
 import { ref, watch } from 'vue'
 import { useOrderStore } from '../stores/order'
 import { useCoffeeStore } from '../stores/coffee'
-import { useAuthStore } from '../stores/auth'
-
 const props = defineProps<{
   visible: boolean
 }>()
@@ -57,7 +55,6 @@ const emit = defineEmits<{
 
 const orderStore = useOrderStore()
 const coffeeStore = useCoffeeStore()
-const authStore = useAuthStore()
 
 const submitting = ref(false)
 const error = ref<string | null>(null)
@@ -81,7 +78,6 @@ async function handleSubmit() {
   try {
     await orderStore.create({
       coffeeId: form.value.coffeeId,
-      userId: authStore.user?.id,
       quantity: form.value.quantity,
       totalPrice: form.value.totalPrice,
     })
